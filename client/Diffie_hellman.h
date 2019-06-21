@@ -1,4 +1,5 @@
 #include <gmp.h>
+#include <stdio.h>
 #include <string.h>
 typedef struct{
 	mpz_t prime;
@@ -12,3 +13,4 @@ void init_numbers(Dh_key* dhk);
 void clear_numbers(Dh_key* dhk);
 void init_prime(size_t sz,Dh_key* dhk);
 void generate_key(size_t sz,Dh_key* dhk);
+char* str2hex(char *hexStr);

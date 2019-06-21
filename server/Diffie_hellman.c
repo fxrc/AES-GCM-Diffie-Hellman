@@ -25,7 +25,7 @@ void put_hex(unsigned char* value, unsigned int len){
         printf("%02x",value[i]);
     puts("");
 }
-char* str2hex(char *hexStr){
+unsigned char* str2hex(char *hexStr){
     int len=strlen(hexStr)/2;
     unsigned char * hexvalue=(unsigned char*)malloc(len*sizeof(char));
     memset(hexvalue,0,len);
