@@ -59,7 +59,8 @@ void DH_key_exchange_client(int sockfd,unsigned char * key_aes){
 	//calculate public key A=g^a(mod p)
 	mpz_powm(client_key.public_key, client_key.base, client_key.private_key, client_key.prime);
 	//send A
-	bzero(buff,MAX);	
+	bzero(buff,MAX);
+	
 	mpz_get_str(buff,16,client_key.public_key);
 	write(sockfd,buff,sizeof(buff));
 	//receive B
@@ -78,12 +79,14 @@ void DH_key_exchange_client(int sockfd,unsigned char * key_aes){
 	clear_numbers(&client_key);
 }
 void func(int sockfd)
-{
+{	
+	//connect to server
 	char buff[MAX];
 	int n=0;
 	unsigned char aes_key[32];
 	//negotiate a 256bit key for aes
 	DH_key_exchange_client(sockfd,aes_key);
+	put_hex(aes_key, 32);
 	//chatting..
 	for (;;) {
 		bzero(buff, sizeof(buff));
@@ -104,6 +107,10 @@ void func(int sockfd)
 
 int main(int argc,char **argv)
 {
+	if(argc!=3){
+		puts("./client ip port");
+		return 0;
+	}
 	int sockfd, connfd;
 	struct sockaddr_in servaddr, cli;
 

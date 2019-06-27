@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "Diffie_hellman.h"
-#include "src/aes.h"
+#include "aes/aes.h"
 #define MAX 256 
 #define PORT 8080 
 #define SA struct sockaddr 
@@ -65,7 +65,7 @@ void DH_key_exchange_server(int sockfd,unsigned char* aes_key){
 	mpz_init(key_from_c);
 	mpz_set_str(key_from_c,dh_str,16);
 	//calculate private key b 
-    generate_key(64, &dh_key);
+    generate_key(32, &dh_key);
 	//B=g^b(mod p)
     mpz_powm(dh_key.public_key, dh_key.base, dh_key.private_key, dh_key.prime);
 	//send B
@@ -87,6 +87,7 @@ void func(int sockfd)
 	char aes_key[32];
 	// negotiate key for aes 256
 	DH_key_exchange_server(sockfd,aes_key);
+	put_hex(aes_key,32);
 	for (;;) { 
 		bzero(buff, sizeof(buff)); 
 		// read the message from client and copy it in buffer 
@@ -109,7 +110,11 @@ void func(int sockfd)
 
 // Driver function 
 int main(int argc, char **argv) 
-{ 
+{
+	if(argc!=2){
+		puts("./server port");
+		return 0;
+	}
 	int sockfd, connfd, len; 
 	struct sockaddr_in servaddr, cli; 
 

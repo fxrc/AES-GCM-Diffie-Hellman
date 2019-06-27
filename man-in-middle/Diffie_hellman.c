@@ -2,7 +2,7 @@
 #include "Diffie_hellman.h"
 #include <stdlib.h>
 #include <time.h>
-void generate_random(size_t sz, unsigned char* random_bytes,Dh_key* dhk)
+void generate_random(size_t sz, unsigned char* random_bytes,Mim_key* dhk)
 {
     unsigned int init_random = 0;
     size_t i = 0;
@@ -21,9 +21,8 @@ void generate_random(size_t sz, unsigned char* random_bytes,Dh_key* dhk)
 }
 
 void put_hex(unsigned char* value, unsigned int len){
-	printf("%u:",len);
     for(int i=0;i<len;i++)
-        printf("%02x ",value[i]);
+        printf("%02x",value[i]);
     puts("");
 }
 unsigned char* str2hex(char *hexStr){
@@ -44,7 +43,7 @@ unsigned char* str2hex(char *hexStr){
     return hexvalue;
 }
 
-void generate_key(size_t sz, Dh_key* dhk)
+void generate_key(size_t sz, Mim_key* dhk)
 {
     unsigned char* random_bytes = NULL;
 
@@ -65,7 +64,7 @@ void generate_key(size_t sz, Dh_key* dhk)
 }
 
 
-void init_prime(size_t sz,Dh_key* dhk)
+void init_prime(size_t sz,Mim_key* dhk)
 {
     mpz_t tmp;
     mpz_t x;
@@ -115,18 +114,20 @@ void init_prime(size_t sz,Dh_key* dhk)
 
 
 
-void init_numbers(Dh_key* dhk)
+void init_numbers(Mim_key* dhk)
 {
-    mpz_init(dhk->key);
+    mpz_init(dhk->key_for_client);
+    mpz_init(dhk->key_for_server);
     mpz_init(dhk->prime);
     mpz_init(dhk->base);
     mpz_init(dhk->private_key);
     mpz_init(dhk->public_key);
 }
 
-void clear_numbers(Dh_key* dhk)
+void clear_numbers(Mim_key* dhk)
 {
-    mpz_clear(dhk->key);
+    mpz_clear(dhk->key_for_client);
+    mpz_clear(dhk->key_for_server);
     mpz_clear(dhk->prime);
     mpz_clear(dhk->base);
     mpz_clear(dhk->private_key);
