@@ -1,0 +1,5 @@
+SRC:=server_psk.c
+server_psk:${SRC} Diffie_hellman.o
+	gcc $< -o server_psk Diffie_hellman.o aes/*.o -l gmp
+Diffie_hellman.o:Diffie_hellman.c
+	gcc -c Diffie_hellman.c -o Diffie_hellman.o

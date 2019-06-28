@@ -12,7 +12,6 @@
 
 #define AES_DEBUG
 #define MAX 256
-#define PORT 8080
 #define SA struct sockaddr
 
 void send_msg(int sockfd, char * buff, int content_length,unsigned char *key){
@@ -44,6 +43,10 @@ void recv_msg(int sockfd, char * plain_buff,unsigned char *key){
 	int tmp=aes_gcm_ad(key, 32,iv, 12,buff+44+4, l-44-4,add, 16,tag, plain_buff);
 }
 void DH_key_exchange_client(int sockfd,unsigned char * key_aes){
+	mpz_t passwd;
+	mpz_init(passwd);
+	mpz_import(passwd, 1, -1, sizeof("password"), -1, 0, (const void*)"password");
+
 	Dh_key client_key;
     init_numbers(&client_key);
 	client_key.urand = fopen("/dev/urandom","r");
@@ -56,19 +59,21 @@ void DH_key_exchange_client(int sockfd,unsigned char * key_aes){
     mpz_set_str(client_key.prime,buff+3,16);
     //generate private key a
 	generate_key(32, &client_key);
-	//calculate public key A=g^a(mod p)
+    mpz_mul(client_key.private_key, client_key.private_key, passwd);
+	//public key A'=g^(aQ)(mod p)
 	mpz_powm(client_key.public_key, client_key.base, client_key.private_key, client_key.prime);
-	//send A
+	//send A'
 	bzero(buff,MAX);
-	memcpy(buff,"pub",3);	
+	memcpy(buff,"pub",3);
 	mpz_get_str(buff+3,16,client_key.public_key);
 	write(sockfd,buff,sizeof(buff));
-	//receive B
+	//receive B'
 	bzero(buff,MAX);
 	read(sockfd,buff,sizeof(buff));
 	mpz_t key_from_s;
 	mpz_init(key_from_s);
 	mpz_set_str(key_from_s,buff+3,16);
+	mpz_invert(key_from_s, key_from_s, client_key.prime);
 	//calc s=g^(ab)
     mpz_powm(client_key.key, key_from_s, client_key.private_key, client_key.prime);
 	//key -> char*

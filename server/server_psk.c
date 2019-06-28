@@ -8,7 +8,8 @@
 #include <unistd.h>
 #include "Diffie_hellman.h"
 #include "aes/aes.h"
-#define MAX 256
+#define MAX 256 
+#define PORT 8080 
 #define SA struct sockaddr 
 
 #define DEBUF 
@@ -42,45 +43,51 @@ void recv_msg(int sockfd, char * plain_buff,unsigned char *key){
 	memset(tag,0,16);
 	int tmp=aes_gcm_ad(key, 32,iv, 12,buff+44+4, l-44-4,add, 16,tag, plain_buff);
 }
-void DH_key_exchange_server(int sockfd,unsigned char* aes_key){
-	Dh_key dh_key;
+void server_key_exchange_server(int sockfd,unsigned char* aes_key){
+	//psk
+	mpz_t passwd;
+	mpz_init(passwd);
+	mpz_import(passwd, 1, -1, sizeof("password"), -1, 0, (const void*)"password");
+	Dh_key server_key;
 	char buff[MAX];
-    init_numbers(&dh_key);
+    init_numbers(&server_key);
 
-    dh_key.urand = fopen("/dev/urandom","r");
-    if(NULL == dh_key.urand)
+    server_key.urand = fopen("/dev/urandom","r");
+    if(NULL == server_key.urand)
     {
         fprintf(stderr, "Failed to init randomization\n");
         exit(1);
     }
-    init_prime(32,&dh_key);
+    init_prime(32,&server_key);
 	//send prime
 	bzero(buff,MAX);
 	memcpy(buff,"pri",3);
-	mpz_get_str(buff+3,16,dh_key.prime);
+	mpz_get_str(buff+3,16,server_key.prime);
 	write(sockfd,buff,sizeof(buff));
-	//receive A
+
+	//receive A'
 	bzero(buff,MAX);
 	read(sockfd,buff,sizeof(buff));
 	mpz_t key_from_c;
 	mpz_init(key_from_c);
 	mpz_set_str(key_from_c,buff+3,16);
+	mpz_invert(key_from_c, key_from_c, server_key.prime);
 	//calculate private key b 
-    generate_key(32, &dh_key);
-	//B=g^b(mod p)
-    mpz_powm(dh_key.public_key, dh_key.base, dh_key.private_key, dh_key.prime);
-	//send B
+    generate_key(32, &server_key);
+	mpz_mul(server_key.private_key, server_key.private_key, passwd);
+	//B'=g^(bQ)(mod p)
+    mpz_powm(server_key.public_key, server_key.base, server_key.private_key, server_key.prime);
+	//send B'
 	bzero(buff,MAX);
 	memcpy(buff,"pub",3);
-	mpz_get_str(buff+3,16,dh_key.public_key);
+	mpz_get_str(buff+3,16,server_key.public_key);
 	write(sockfd, buff, sizeof(buff));
 	//calc s=g^(ab)
-	bzero(buff,sizeof(buff));
-    mpz_powm(dh_key.key, key_from_c, dh_key.private_key, dh_key.prime);
-    mpz_get_str(buff,16,dh_key.key);
+    mpz_powm(server_key.key, key_from_c, server_key.private_key, server_key.prime);
+    mpz_get_str(buff,16,server_key.key);
     memcpy(aes_key,str2hex(buff),32);
-	fclose(dh_key.urand);
-    clear_numbers(&dh_key);
+	fclose(server_key.urand);
+    clear_numbers(&server_key);
 }
 
 void func(int sockfd) 
@@ -89,7 +96,7 @@ void func(int sockfd)
 	int n; 
 	char aes_key[32];
 	// negotiate key for aes 256
-	DH_key_exchange_server(sockfd,aes_key);
+	server_key_exchange_server(sockfd,aes_key);
 	put_hex(aes_key,32);
 	for (;;) { 
 		bzero(buff, sizeof(buff)); 

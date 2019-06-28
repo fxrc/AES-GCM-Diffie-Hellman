@@ -21,8 +21,9 @@ void generate_random(size_t sz, unsigned char* random_bytes,Mim_key* dhk)
 }
 
 void put_hex(unsigned char* value, unsigned int len){
+	printf("%u:", len);
     for(int i=0;i<len;i++)
-        printf("%02x",value[i]);
+        printf("%02x ",value[i]);
     puts("");
 }
 unsigned char* str2hex(char *hexStr){
